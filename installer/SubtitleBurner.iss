@@ -1,5 +1,5 @@
 #define MyAppName "Subtitle Burner"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "0.1.0"
 #define MyAppPublisher "Subtitle Burner"
 
 [Setup]

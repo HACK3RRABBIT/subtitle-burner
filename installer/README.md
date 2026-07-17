@@ -58,7 +58,7 @@ To build (on a real Linux box):
 ```
 cd installer
 ./build_deb.sh
-sudo apt install ./output/subtitleburner_1.0.0_amd64.deb
+sudo apt install ./output/subtitleburner_0.1.0_amd64.deb
 ```
 
 Layout:
