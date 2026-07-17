@@ -42,6 +42,7 @@ Source: "..\config.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\launcher.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\gui.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\tui.py"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\tui_launcher.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\bootstrap.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\requirements.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "assets\icon.ico"; DestDir: "{app}\assets"; Flags: ignoreversion
@@ -59,7 +60,7 @@ Source: "runtimes\ffmpeg\*"; DestDir: "{app}\ffmpeg"; Flags: ignoreversion recur
 
 [Icons]
 Name: "{group}\Subtitle Burner"; Filename: "{app}\python\python.exe"; Parameters: """{app}\gui.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"
-Name: "{group}\Subtitle Burner (Terminal UI)"; Filename: "{app}\python\python.exe"; Parameters: """{app}\tui.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"
+Name: "{group}\Subtitle Burner (Terminal UI)"; Filename: "{app}\python\python.exe"; Parameters: """{app}\tui_launcher.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"
 Name: "{group}\Uninstall Subtitle Burner"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\Subtitle Burner"; Filename: "{app}\python\python.exe"; Parameters: """{app}\gui.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"; Tasks: desktopicon
 

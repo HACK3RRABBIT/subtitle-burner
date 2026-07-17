@@ -16,8 +16,8 @@ APP_DIR="$STAGE/opt/subtitleburner"
 echo "Copying app source into $APP_DIR ..."
 mkdir -p "$APP_DIR"
 cp "$REPO_ROOT/app.py" "$REPO_ROOT/config.py" "$REPO_ROOT/launcher.py" \
-   "$REPO_ROOT/gui.py" "$REPO_ROOT/tui.py" "$REPO_ROOT/bootstrap.py" \
-   "$REPO_ROOT/requirements.txt" "$APP_DIR/"
+   "$REPO_ROOT/gui.py" "$REPO_ROOT/tui.py" "$REPO_ROOT/tui_launcher.py" \
+   "$REPO_ROOT/bootstrap.py" "$REPO_ROOT/requirements.txt" "$APP_DIR/"
 
 # subburn/ is a growing package (engines, routes, etc.) - copied as a whole
 # tree (minus dev-time __pycache__ dirs) so new files under it never need a
