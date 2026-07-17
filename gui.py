@@ -42,17 +42,19 @@ margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
 background:#0f1115;color:#e6e6e6;font-family:-apple-system,Segoe UI,sans-serif;
 """
 
-SETUP_HTML = f"""
-<html><body style="{BASE_CSS}">
-<div style="text-align:center;max-width:560px;padding:24px">
-<h2 style="font-weight:600;margin-bottom:16px">Setting up Subtitle Burner</h2>
-<div id="phase" style="font-size:15px;color:#c7cbd1;margin-bottom:10px">Preparing...</div>
-<div style="background:#1c1f26;border-radius:8px;height:8px;overflow:hidden;margin:0 auto 10px;max-width:420px">
+SETUP_HTML = """
+<html><body style="margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;
+justify-content:center;background:#0f1115;color:#e6e6e6;font-family:-apple-system,Segoe UI,sans-serif;">
+<div style="width:100%;max-width:640px;padding:24px;box-sizing:border-box">
+<h2 style="font-weight:600;margin-bottom:16px;text-align:center">Setting up Subtitle Burner</h2>
+<div id="phase" style="font-size:15px;color:#c7cbd1;margin-bottom:10px;text-align:center">Preparing...</div>
+<div style="background:#1c1f26;border-radius:8px;height:8px;overflow:hidden;margin:0 auto 16px;max-width:420px">
   <div id="bar" style="background:#2563eb;height:100%;width:4%;transition:width 0.4s"></div>
 </div>
-<div id="detail" style="font-size:11px;color:#6b7178;font-family:Consolas,monospace;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:480px;margin:0 auto"></div>
-<p style="color:#5a616a;font-size:12px;margin-top:22px">This only happens once - it downloads the
+<pre id="log" style="text-align:left;height:260px;overflow:auto;background:#1c1f26;
+  padding:10px;border-radius:6px;font-size:11px;color:#9aa0a6;font-family:Consolas,monospace;
+  white-space:pre-wrap;word-break:break-all;margin:0"></pre>
+<p style="color:#5a616a;font-size:12px;margin-top:16px;text-align:center">This only happens once - it downloads the
 speech/translation engine (a few GB) and needs an internet connection. Later launches are instant.</p>
 </div></body></html>
 """
@@ -121,7 +123,7 @@ def run_bootstrap_with_progress(window) -> tuple[bool, str]:
 
     phase_index = -1
     log_lines: list[str] = []
-    last_update = 0.0
+    last_phase_update = 0.0
     for line in proc.stdout:
         line = line.rstrip("\n")
         log_lines.append(line)
@@ -129,10 +131,23 @@ def run_bootstrap_with_progress(window) -> tuple[bool, str]:
             phase_index = min(phase_index + 1, len(PHASE_LABELS) - 1)
             log.info("Bootstrap phase %d: %s", phase_index, line)
 
+        # The actual log line, appended every time - this is the real,
+        # unfiltered pip/npm output so setup is never a black box.
+        try:
+            window.evaluate_js(
+                "(function(){var l=document.getElementById('log');"
+                "l.textContent += " + json.dumps(line + "\n") + ";"
+                "l.scrollTop = l.scrollHeight;})();"
+            )
+        except Exception:
+            log.exception("evaluate_js failed while appending bootstrap log line")
+
+        # The friendly phase label + progress bar are just cosmetic, so these
+        # are throttled separately from the log itself.
         now = time.time()
-        if now - last_update < 0.2:
+        if now - last_phase_update < 0.2:
             continue
-        last_update = now
+        last_phase_update = now
 
         label = PHASE_LABELS[phase_index] if phase_index >= 0 else "Preparing..."
         pct = max(4, round((phase_index + 1) / len(PHASE_LABELS) * 100)) if phase_index >= 0 else 4
@@ -140,10 +155,9 @@ def run_bootstrap_with_progress(window) -> tuple[bool, str]:
             window.evaluate_js(
                 "document.getElementById('phase').textContent = " + json.dumps(label) + ";"
                 "document.getElementById('bar').style.width = " + json.dumps(f"{pct}%") + ";"
-                "document.getElementById('detail').textContent = " + json.dumps(line[-140:]) + ";"
             )
         except Exception:
-            log.exception("evaluate_js failed while updating bootstrap progress")
+            log.exception("evaluate_js failed while updating bootstrap progress bar")
 
     proc.wait()
     log.info("Bootstrap subprocess exited with code %s", proc.returncode)
@@ -188,7 +202,7 @@ def main() -> int:
     if problem:
         log.error("check_prerequisites failed: %s", problem)
         webview.create_window("Subtitle Burner", html=_error_html(problem), width=760, height=480)
-        webview.start()
+        webview.start(icon=str(ICON_PATH))
         return 1
 
     window = webview.create_window(
@@ -213,7 +227,7 @@ def main() -> int:
     tray_icon = _start_tray_icon(window, quitting)
 
     try:
-        webview.start()
+        webview.start(icon=str(ICON_PATH))
     finally:
         log.info("webview.start() returned, shutting down")
         if tray_icon:
