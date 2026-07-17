@@ -10,6 +10,7 @@ soundfile==0.14.0
 pyinstaller==6.21.0
 langdetect==1.0.9
 pywebview==6.2.1
+pystray==0.19.5
 textual==8.2.8
 
 # torch/torchaudio: pinned to CUDA (cu126) builds so speaker diarization runs

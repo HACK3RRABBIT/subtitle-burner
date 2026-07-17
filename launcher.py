@@ -70,6 +70,19 @@ def wait_for_http(url: str, timeout: float = 180.0) -> bool:
     return False
 
 
+def popen_kwargs() -> dict:
+    """Extra kwargs for subprocess.Popen/run so child processes never pop up
+    their own console window on Windows. Safe to use even when the parent
+    itself has a console (launcher.py's own CLI mode): the child still
+    inherits and writes to that existing console since this only suppresses
+    creating a *new* one - it only matters when the parent has no console at
+    all (gui.py, launched via pythonw.exe), where it prevents a window from
+    flashing open for each spawned subprocess."""
+    if sys.platform == "win32":
+        return {"creationflags": subprocess.CREATE_NO_WINDOW}
+    return {}
+
+
 def child_env() -> dict:
     """Environment for the backend/frontend subprocesses: prepends the bundled
     ffmpeg directory to PATH when present, so an installed app finds it without
@@ -111,7 +124,10 @@ def run_bootstrap_if_needed():
     import bootstrap
 
     if bootstrap.needs_bootstrap():
-        subprocess.run([str(PYTHON_EXECUTABLE), "-u", str(BASE_DIR / "bootstrap.py")], cwd=str(BASE_DIR), check=True)
+        subprocess.run(
+            [str(PYTHON_EXECUTABLE), "-u", str(BASE_DIR / "bootstrap.py")],
+            cwd=str(BASE_DIR), check=True, **popen_kwargs(),
+        )
 
 
 def start_processes() -> tuple[subprocess.Popen, subprocess.Popen, int]:
@@ -127,11 +143,13 @@ def start_processes() -> tuple[subprocess.Popen, subprocess.Popen, int]:
         [str(PYTHON_EXECUTABLE), "-u", str(APP_SCRIPT)],
         cwd=str(BASE_DIR),
         env=env,
+        **popen_kwargs(),
     )
     frontend = subprocess.Popen(
         [*npm, "run", "start", "--", "-H", "0.0.0.0", "-p", str(WEB_PORT)],
         cwd=str(WEB_DIR),
         env=env,
+        **popen_kwargs(),
     )
     return backend, frontend, backend_port
 
