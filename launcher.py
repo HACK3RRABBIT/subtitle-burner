@@ -130,26 +130,45 @@ def run_bootstrap_if_needed():
         )
 
 
-def start_processes() -> tuple[subprocess.Popen, subprocess.Popen, int]:
+def start_processes(log_to_files: bool = False) -> tuple[subprocess.Popen, subprocess.Popen, int]:
     """Starts the FastAPI backend and Next.js frontend as subprocesses.
 
     Caller is responsible for checking check_prerequisites() first and for
     calling stop_processes() to tear these down.
+
+    log_to_files: when False (launcher.py's own console-mode default), the
+    children inherit this process's stdout/stderr, which is exactly what a
+    console-mode caller wants. When True (gui.py, launched via pythonw.exe
+    with no console at all), that inherited stdout/stderr is invalid/closed -
+    uvicorn (and Next.js) crash outright the moment they try to log anything
+    to it. Redirecting to real files avoids that crash and doubles as a
+    diagnostic log when something goes wrong.
     """
     npm = npm_command()
     backend_port = get_backend_port()
     env = child_env()
+
+    backend_kwargs = {}
+    frontend_kwargs = {}
+    if log_to_files:
+        backend_kwargs["stdout"] = open(BASE_DIR / "backend.log", "w", encoding="utf-8")
+        backend_kwargs["stderr"] = subprocess.STDOUT
+        frontend_kwargs["stdout"] = open(BASE_DIR / "frontend.log", "w", encoding="utf-8")
+        frontend_kwargs["stderr"] = subprocess.STDOUT
+
     backend = subprocess.Popen(
         [str(PYTHON_EXECUTABLE), "-u", str(APP_SCRIPT)],
         cwd=str(BASE_DIR),
         env=env,
         **popen_kwargs(),
+        **backend_kwargs,
     )
     frontend = subprocess.Popen(
         [*npm, "run", "start", "--", "-H", "0.0.0.0", "-p", str(WEB_PORT)],
         cwd=str(WEB_DIR),
         env=env,
         **popen_kwargs(),
+        **frontend_kwargs,
     )
     return backend, frontend, backend_port
 

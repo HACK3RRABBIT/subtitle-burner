@@ -176,7 +176,7 @@ def start_and_load(window, procs: dict):
 
         log.info("Bootstrap OK, starting backend/frontend")
         window.load_html(LOADING_HTML)
-        backend, frontend, backend_port = start_processes()
+        backend, frontend, backend_port = start_processes(log_to_files=True)
         procs["backend"], procs["frontend"] = backend, frontend
 
         backend_ready = wait_for_http(f"http://127.0.0.1:{backend_port}/api/models")
