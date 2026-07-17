@@ -16,8 +16,11 @@ APP_DIR="$STAGE/opt/subtitleburner"
 echo "Copying app source into $APP_DIR ..."
 mkdir -p "$APP_DIR"
 cp "$REPO_ROOT/app.py" "$REPO_ROOT/config.py" "$REPO_ROOT/launcher.py" \
-   "$REPO_ROOT/gui.py" "$REPO_ROOT/tui.py" "$REPO_ROOT/tui_launcher.py" \
+   "$REPO_ROOT/gui_webview.py" "$REPO_ROOT/tui.py" "$REPO_ROOT/tui_launcher.py" \
    "$REPO_ROOT/bootstrap.py" "$REPO_ROOT/requirements.txt" "$APP_DIR/"
+# gui.py itself is now the Windows-only PySide6 native app (imports PySide6,
+# which Linux's venv never installs) - gui_webview.py is what Linux's .desktop
+# entry and --gui CLI flag actually point at, copied above under its own name.
 
 # subburn/ is a growing package (engines, routes, etc.) - copied as a whole
 # tree (minus dev-time __pycache__ dirs) so new files under it never need a

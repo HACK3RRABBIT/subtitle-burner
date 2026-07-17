@@ -1,5 +1,5 @@
 #define MyAppName "Subtitle Burner"
-#define MyAppVersion "0.1.1"
+#define MyAppVersion "0.1.0"
 #define MyAppPublisher "Subtitle Burner"
 
 [Setup]
@@ -52,6 +52,11 @@ Source: "assets\icon.ico"; DestDir: "{app}\assets"; Flags: ignoreversion
 ; web\* entry below.
 Source: "..\subburn\*"; DestDir: "{app}\subburn"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "__pycache__"
 
+; subtitleburner_gui/ is the native PySide6 app gui.py imports - Linux's
+; gui_webview.py doesn't use it, but this .iss only ever builds the Windows
+; installer, so it's unconditionally bundled here.
+Source: "..\subtitleburner_gui\*"; DestDir: "{app}\subtitleburner_gui"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "__pycache__"
+
 Source: "..\web\*"; DestDir: "{app}\web"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "node_modules,.next,*.log"
 
 Source: "runtimes\python\*"; DestDir: "{app}\python"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -65,6 +70,11 @@ Source: "runtimes\ffmpeg\*"; DestDir: "{app}\ffmpeg"; Flags: ignoreversion recur
 ; the whole point of that entry.
 Name: "{group}\Subtitle Burner"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\gui.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"
 Name: "{group}\Subtitle Burner (Terminal UI)"; Filename: "{app}\python\python.exe"; Parameters: """{app}\tui_launcher.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"
+; The main GUI is now native PySide6, not a browser window - this shortcut is
+; for anyone who still wants the Next.js web UI (e.g. to use it from another
+; device on the LAN). launcher.py's console prompts (input() etc.) mean this
+; needs a visible console, unlike the main windowless GUI shortcut above.
+Name: "{group}\Subtitle Burner (Web UI)"; Filename: "{app}\python\python.exe"; Parameters: """{app}\launcher.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"
 Name: "{group}\Uninstall Subtitle Burner"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\Subtitle Burner"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\gui.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\icon.ico"; Tasks: desktopicon
 

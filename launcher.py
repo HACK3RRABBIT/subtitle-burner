@@ -130,8 +130,11 @@ def run_bootstrap_if_needed():
         )
 
 
-def start_processes(log_to_files: bool = False) -> tuple[subprocess.Popen, subprocess.Popen, int]:
-    """Starts the FastAPI backend and Next.js frontend as subprocesses.
+def start_processes(
+    log_to_files: bool = False, start_frontend: bool = True
+) -> tuple[subprocess.Popen, Optional[subprocess.Popen], int]:
+    """Starts the FastAPI backend (and, unless told not to, the Next.js
+    frontend) as subprocesses.
 
     Caller is responsible for checking check_prerequisites() first and for
     calling stop_processes() to tear these down.
@@ -143,18 +146,18 @@ def start_processes(log_to_files: bool = False) -> tuple[subprocess.Popen, subpr
     uvicorn (and Next.js) crash outright the moment they try to log anything
     to it. Redirecting to real files avoids that crash and doubles as a
     diagnostic log when something goes wrong.
+
+    start_frontend: the Windows native GUI renders its own UI with Qt and
+    never talks to Next.js - it only needs the FastAPI backend. Pass False to
+    skip spawning the frontend entirely; the returned frontend is then None.
     """
-    npm = npm_command()
     backend_port = get_backend_port()
     env = child_env()
 
     backend_kwargs = {}
-    frontend_kwargs = {}
     if log_to_files:
         backend_kwargs["stdout"] = open(BASE_DIR / "backend.log", "w", encoding="utf-8")
         backend_kwargs["stderr"] = subprocess.STDOUT
-        frontend_kwargs["stdout"] = open(BASE_DIR / "frontend.log", "w", encoding="utf-8")
-        frontend_kwargs["stderr"] = subprocess.STDOUT
 
     backend = subprocess.Popen(
         [str(PYTHON_EXECUTABLE), "-u", str(APP_SCRIPT)],
@@ -163,21 +166,30 @@ def start_processes(log_to_files: bool = False) -> tuple[subprocess.Popen, subpr
         **popen_kwargs(),
         **backend_kwargs,
     )
-    frontend = subprocess.Popen(
-        [*npm, "run", "start", "--", "-H", "0.0.0.0", "-p", str(WEB_PORT)],
-        cwd=str(WEB_DIR),
-        env=env,
-        **popen_kwargs(),
-        **frontend_kwargs,
-    )
+
+    frontend = None
+    if start_frontend:
+        npm = npm_command()
+        frontend_kwargs = {}
+        if log_to_files:
+            frontend_kwargs["stdout"] = open(BASE_DIR / "frontend.log", "w", encoding="utf-8")
+            frontend_kwargs["stderr"] = subprocess.STDOUT
+        frontend = subprocess.Popen(
+            [*npm, "run", "start", "--", "-H", "0.0.0.0", "-p", str(WEB_PORT)],
+            cwd=str(WEB_DIR),
+            env=env,
+            **popen_kwargs(),
+            **frontend_kwargs,
+        )
     return backend, frontend, backend_port
 
 
-def stop_processes(backend: subprocess.Popen, frontend: subprocess.Popen):
-    for proc in (backend, frontend):
+def stop_processes(backend: subprocess.Popen, frontend: Optional[subprocess.Popen]):
+    procs = [p for p in (backend, frontend) if p is not None]
+    for proc in procs:
         if proc.poll() is None:
             proc.terminate()
-    for proc in (backend, frontend):
+    for proc in procs:
         try:
             proc.wait(timeout=10)
         except subprocess.TimeoutExpired:

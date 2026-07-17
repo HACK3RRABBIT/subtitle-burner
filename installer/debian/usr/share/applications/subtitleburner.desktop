@@ -2,7 +2,7 @@
 Type=Application
 Name=Subtitle Burner
 Comment=Generate, translate, and burn video subtitles
-Exec=/opt/subtitleburner/venv/bin/python /opt/subtitleburner/gui.py
+Exec=/opt/subtitleburner/venv/bin/python /opt/subtitleburner/gui_webview.py
 Icon=subtitleburner
 Terminal=false
 Categories=AudioVideo;Video;

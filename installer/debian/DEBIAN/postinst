@@ -7,12 +7,13 @@ if [ ! -d "$APP_DIR/venv" ]; then
     echo "Subtitle Burner: creating Python virtual environment..."
     python3 -m venv "$APP_DIR/venv"
 
-    # gui.py needs pywebview/pystray (its GUI framework) to show a window at
-    # all - including the first-run setup progress window itself - but the
-    # rest of the app's dependencies (the multi-GB ML stack) are only
-    # installed later by bootstrap.py on first launch. Pre-installing the
-    # lightweight GUI framework here avoids a chicken-and-egg crash (gui.py
-    # trying to import webview before anything has installed it).
+    # gui_webview.py (Linux's GUI entry point - Windows now uses a native
+    # PySide6 gui.py instead) needs pywebview/pystray to show a window at all -
+    # including the first-run setup progress window itself - but the rest of
+    # the app's dependencies (the multi-GB ML stack) are only installed later
+    # by bootstrap.py on first launch. Pre-installing the lightweight GUI
+    # framework here avoids a chicken-and-egg crash (gui_webview.py trying to
+    # import webview before anything has installed it).
     echo "Subtitle Burner: installing GUI framework..."
     "$APP_DIR/venv/bin/pip" install --quiet pywebview pystray Pillow
 fi

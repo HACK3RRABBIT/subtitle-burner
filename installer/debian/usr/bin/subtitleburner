@@ -8,7 +8,7 @@ PYTHON="$APP_DIR/venv/bin/python"
 
 case "$1" in
     --gui)
-        exec "$PYTHON" "$APP_DIR/gui.py"
+        exec "$PYTHON" "$APP_DIR/gui_webview.py"
         ;;
     --web)
         exec "$PYTHON" "$APP_DIR/launcher.py"
