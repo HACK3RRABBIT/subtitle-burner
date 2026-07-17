@@ -1,0 +1,38 @@
+# Local config/secrets - config.json holds a real HF token / app password once set
+config.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.bootstrap_complete
+.requirements_normal.txt
+
+# Runtime job data (generated per upload)
+jobs/
+
+# Web frontend (has its own .gitignore too; node_modules/.next covered here
+# as well since installer/build_deb.sh and bootstrap.py both regenerate them)
+web/node_modules/
+web/.next/
+
+# Installer build artifacts - not source, not meant to be version-controlled
+# (runtimes/ alone is ~330MB of downloaded portable Python/Node/ffmpeg)
+installer/runtimes/
+installer/output/
+installer/debian/opt/
+installer/*.log
+
+# Logs
+*.log
+
+# Built launcher exe (PyInstaller output) - regenerate with pyinstaller, not
+# meant to be version-controlled
+/SubtitleBurner.exe
+
+# Claude Code local session/config data (machine-specific, not app source)
+.claude/
+
+# Editor/OS cruft
+.DS_Store
+Thumbs.db

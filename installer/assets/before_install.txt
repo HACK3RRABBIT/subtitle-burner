@@ -1,0 +1,12 @@
+Before you continue:
+
+- First launch needs an internet connection. It downloads the speech/translation
+  engine (PyTorch, Whisper models, etc.) - this is a one-time download of several
+  gigabytes and can take a while depending on your connection. Later launches
+  start in seconds.
+- Make sure you have a few GB of free disk space for those downloads.
+- This app bundles FFmpeg (https://ffmpeg.org), licensed under the GPL. FFmpeg's
+  own license and source are available from the FFmpeg project; it is included
+  here as a separate, unmodified program invoked by this app, not linked into it.
+
+Click Next to choose where to install Subtitle Burner.

@@ -1,0 +1,15 @@
+Package: subtitleburner
+Version: 1.0.0
+Section: video
+Priority: optional
+Architecture: amd64
+Depends: python3 (>= 3.10), python3-venv, python3-pip, ffmpeg, nodejs, npm, python3-gi, gir1.2-gtk-3.0, gir1.2-webkit2-4.1 | gir1.2-webkit2-4.0
+Maintainer: Subtitle Burner <noreply@example.com>
+Description: Automatic subtitle generation, translation, and burning
+ Subtitle Burner transcribes speech in a video using Whisper, optionally
+ translates the subtitles, and produces a video with them either burned in
+ or embedded as a selectable track. Ships with a web UI, a native desktop
+ GUI, and a terminal UI.
+ .
+ First launch downloads several GB of additional dependencies (PyTorch,
+ speech/translation models) and needs an internet connection.

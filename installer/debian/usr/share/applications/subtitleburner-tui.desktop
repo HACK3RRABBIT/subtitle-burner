@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Subtitle Burner (Terminal UI)
+Comment=Generate, translate, and burn video subtitles (terminal)
+Exec=/opt/subtitleburner/venv/bin/python /opt/subtitleburner/tui.py
+Icon=subtitleburner
+Terminal=true
+Categories=AudioVideo;Video;

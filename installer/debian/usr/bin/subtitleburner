@@ -1,0 +1,19 @@
+#!/bin/sh
+# Subtitle Burner CLI launcher.
+#   subtitleburner          -> terminal UI (default)
+#   subtitleburner --gui    -> native desktop window
+#   subtitleburner --web    -> just the web UI + API backend (no GUI/TUI)
+APP_DIR=/opt/subtitleburner
+PYTHON="$APP_DIR/venv/bin/python"
+
+case "$1" in
+    --gui)
+        exec "$PYTHON" "$APP_DIR/gui.py"
+        ;;
+    --web)
+        exec "$PYTHON" "$APP_DIR/launcher.py"
+        ;;
+    *)
+        exec "$PYTHON" "$APP_DIR/tui.py"
+        ;;
+esac

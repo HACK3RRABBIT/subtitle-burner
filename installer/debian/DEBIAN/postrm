@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+APP_DIR=/opt/subtitleburner
+
+# Only on full purge (not a plain "remove") - wipe the venv and everything
+# bootstrap.py / the app generated at runtime, since dpkg only tracks files
+# it originally installed and wouldn't otherwise clean these up.
+case "$1" in
+    purge)
+        rm -rf \
+            "$APP_DIR/venv" \
+            "$APP_DIR/web/node_modules" \
+            "$APP_DIR/web/.next" \
+            "$APP_DIR/jobs" \
+            "$APP_DIR/config.json" \
+            "$APP_DIR/.bootstrap_complete" \
+            "$APP_DIR/__pycache__"
+        ;;
+esac
+
+exit 0

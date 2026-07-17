@@ -1,0 +1,23 @@
+fastapi==0.139.0
+uvicorn[standard]==0.51.0
+python-multipart==0.0.32
+faster-whisper==1.2.1
+argostranslate==1.11.0
+nvidia-cublas-cu12==12.9.2.10
+nvidia-cudnn-cu12==9.24.0.43
+pyannote.audio==4.0.7
+soundfile==0.14.0
+pyinstaller==6.21.0
+langdetect==1.0.9
+pywebview==6.2.1
+textual==8.2.8
+
+# torch/torchaudio: pinned to CUDA (cu126) builds so speaker diarization runs
+# on the GPU instead of the CPU-only build pyannote.audio would otherwise pull
+# in from PyPI. Install these two explicitly, before or after the rest of this
+# file, with:
+#   pip install torch==2.13.0+cu126 torchaudio==2.11.0+cu126 --index-url https://download.pytorch.org/whl/cu126
+# (plain `pip install -r requirements.txt` will not do this - pip has no way to
+# express a different index URL per package inside one requirements file.)
+torch==2.13.0+cu126
+torchaudio==2.11.0+cu126

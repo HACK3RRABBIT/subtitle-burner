@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+APP_DIR=/opt/subtitleburner
+
+if [ ! -d "$APP_DIR/venv" ]; then
+    echo "Subtitle Burner: creating Python virtual environment..."
+    python3 -m venv "$APP_DIR/venv"
+fi
+
+# This is a single-user desktop app: it stores its config, job data, and
+# first-run dependency install (via bootstrap.py) under its own install
+# directory, so that directory needs to be writable by whichever user runs
+# it, not just root. On a shared multi-user machine, tighten this by hand
+# afterwards (e.g. give one group ownership) - this opens it to all local
+# users, which is fine for the single-user desktop case this targets.
+chmod -R a+rwX "$APP_DIR"
+
+echo ""
+echo "Subtitle Burner installed to $APP_DIR."
+echo "Launch it from your applications menu, or run: subtitleburner"
+echo ""
+echo "First launch downloads several GB of dependencies (PyTorch, speech"
+echo "models) - make sure you have an internet connection and free disk space."
+
+exit 0
