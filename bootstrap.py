@@ -2,6 +2,7 @@ import hashlib
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
@@ -31,9 +32,23 @@ def _npm_cmd() -> list[str]:
     return [npm]
 
 
-def _run(cmd: list, **kwargs):
+def _run(cmd: list, retries: int = 2, retry_delay: float = 10.0, **kwargs):
+    """Runs cmd, retrying on failure. pip installs of the large torch/CUDA
+    wheels have been observed to fail transiently (a network blip partway
+    through a multi-GB download) and succeed immediately on a plain retry -
+    this has hit multiple real installs, not just one machine, so retrying
+    automatically here avoids sending the user back to a support thread for
+    something a second attempt would have silently fixed."""
     print("+ " + " ".join(str(c) for c in cmd), flush=True)
-    subprocess.run(cmd, check=True, **kwargs)
+    for attempt in range(1, retries + 2):
+        try:
+            subprocess.run(cmd, check=True, **kwargs)
+            return
+        except subprocess.CalledProcessError:
+            if attempt > retries:
+                raise
+            print(f"Command failed (attempt {attempt}/{retries + 1}) - retrying in {retry_delay:.0f}s...", flush=True)
+            time.sleep(retry_delay)
 
 
 def _installed_torch_build() -> str | None:
