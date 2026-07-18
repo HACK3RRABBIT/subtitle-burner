@@ -38,6 +38,14 @@ class DiarizationEngine(ABC):
         """Returns speaker turns: [{"start": .., "end": .., "speaker": ..}, ...]."""
         ...
 
+    def check_available(self) -> None:
+        """Cheap upfront check (e.g. required token/config present) that
+        raises the same error diarize() would eventually hit, without doing
+        any of diarize()'s expensive work. Called before transcription starts
+        so a misconfigured job fails in under a second instead of after
+        however long transcription takes. Default: nothing to check."""
+        return
+
     def is_loaded(self) -> bool:
         """Passive introspection - must never trigger a load. Default: this
         engine doesn't cache anything locally."""

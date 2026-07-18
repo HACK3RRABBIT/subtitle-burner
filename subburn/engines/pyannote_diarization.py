@@ -15,9 +15,8 @@ class PyannoteDiarizationEngine(DiarizationEngine):
     def __init__(self):
         self._cache = ModelCache()
 
-    def _load_pipeline(self):
-        token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
-        if not token:
+    def check_available(self) -> None:
+        if not (os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")):
             raise RuntimeError(
                 "Speaker diarization requires a Hugging Face access token. Create a free account at "
                 "huggingface.co, accept the terms on the model pages at "
@@ -26,6 +25,10 @@ class PyannoteDiarizationEngine(DiarizationEngine):
                 "huggingface.co/settings/tokens, then set it as the HF_TOKEN environment variable before "
                 "starting this server."
             )
+
+    def _load_pipeline(self):
+        self.check_available()
+        token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
 
         from pyannote.audio import Pipeline
 

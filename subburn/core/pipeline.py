@@ -69,6 +69,11 @@ def _process_job_locked(
 ):
     try:
         check_cancelled(job_id)
+        if diarize:
+            # Fail fast on a missing HF token (or other engine misconfiguration)
+            # before spending minutes transcribing - diarize() would raise the
+            # same error anyway, but only after transcription already finished.
+            get_diarization_engine().check_available()
         update_job(job_id, status="extracting_audio", percent=5, processing_started_at=time.time())
         extract_audio(job_id, video_path, audio_path)
 
