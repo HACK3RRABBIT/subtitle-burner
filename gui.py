@@ -117,25 +117,47 @@ def main() -> int:
         state["main_window"].raise_()
         state["main_window"].activateWindow()
 
-    def start_backend_and_show_main_window():
+    def start_backend_and_show_main_window(attempt: int = 1, max_auto_attempts: int = 3):
         from subtitleburner_gui.main_window import MainWindow
 
-        log.info("Bootstrap OK, starting backend")
+        log.info("Starting backend (attempt %d/%d)", attempt, max_auto_attempts)
         backend, _frontend, backend_port = start_processes(log_to_files=True, start_frontend=False)
         state["backend"] = backend
 
-        backend_ready = wait_for_http(f"http://127.0.0.1:{backend_port}/api/models")
-        log.info("backend_ready=%s", backend_ready)
-        if not backend_ready:
-            diagnosis = _diagnose_backend_failure()
-            log.error("Backend failed to start: %s", diagnosis)
-            QMessageBox.critical(None, "Subtitle Burner - Error", diagnosis)
-            shutdown()
+        # The first attempt gets a generous timeout (a slow but legitimate
+        # first-ever CUDA/model-cache warmup can take a while). A failure
+        # here has been observed to be a one-off, per-process torch DLL load
+        # failure (e.g. antivirus locking a just-installed DLL on first
+        # access) that leaves that process permanently unable to import
+        # torch, even though a brand new process succeeds within seconds -
+        # so retries use a short timeout and a genuinely fresh process
+        # rather than waiting longer on the same one.
+        timeout = 180.0 if attempt == 1 else 45.0
+        backend_ready = wait_for_http(f"http://127.0.0.1:{backend_port}/api/models", timeout=timeout)
+        log.info("backend_ready=%s (attempt %d)", backend_ready, attempt)
+        if backend_ready:
+            state["main_window"] = MainWindow(f"http://127.0.0.1:{backend_port}", ICON_PATH)
+            state["tray"] = _start_tray_icon(app, show_main_window, shutdown)
+            show_main_window()
             return
 
-        state["main_window"] = MainWindow(f"http://127.0.0.1:{backend_port}", ICON_PATH)
-        state["tray"] = _start_tray_icon(app, show_main_window, shutdown)
-        show_main_window()
+        stop_processes(backend, None)
+        state["backend"] = None
+        if attempt < max_auto_attempts:
+            log.info("Retrying backend startup with a fresh process")
+            start_backend_and_show_main_window(attempt + 1, max_auto_attempts)
+            return
+
+        diagnosis = _diagnose_backend_failure()
+        log.error("Backend failed to start after %d attempts: %s", attempt, diagnosis)
+        box = QMessageBox(
+            QMessageBox.Icon.Critical, "Subtitle Burner - Error", diagnosis,
+            QMessageBox.StandardButton.Retry | QMessageBox.StandardButton.Close,
+        )
+        if box.exec() == QMessageBox.StandardButton.Retry:
+            start_backend_and_show_main_window(1, max_auto_attempts)
+        else:
+            shutdown()
 
     bootstrap_screen = BootstrapScreen(ICON_PATH, start_backend_and_show_main_window)
     bootstrap_screen.show()
