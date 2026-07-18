@@ -80,8 +80,8 @@ ERROR_HTML_TEMPLATE = """
 # of a raw pip/npm log dump. Purely cosmetic: if bootstrap.py's own step order
 # ever changes, this just mislabels a step rather than breaking anything.
 PHASE_LABELS = [
-    "Installing core components...",
     "Installing the speech engine (this is the largest download)...",
+    "Installing core components...",
     "Installing the web interface...",
     "Finalizing the web interface...",
 ]

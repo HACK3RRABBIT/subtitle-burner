@@ -36,10 +36,53 @@ def _run(cmd: list, **kwargs):
     subprocess.run(cmd, check=True, **kwargs)
 
 
+def _installed_torch_build() -> str | None:
+    """Returns the installed torch's version string (e.g. "2.13.0+cu126"),
+    or None if torch isn't installed. Used to detect a stale/mismatched
+    build left over from a previous bootstrap (e.g. the machine gained or
+    lost a GPU between runs) before it can cause the exact corruption this
+    guards against - see the uninstall step below."""
+    try:
+        out = subprocess.run(
+            [sys.executable, "-c", "import torch; print(torch.__version__)"],
+            capture_output=True, text=True, timeout=30,
+        )
+        return out.stdout.strip() if out.returncode == 0 else None
+    except Exception:
+        return None
+
+
 def bootstrap_python_deps():
     # torch/torchaudio need a different (CUDA vs CPU) package index depending
-    # on the machine, which a single requirements.txt can't express - install
-    # everything else normally, then those two separately below.
+    # on the machine, which a single requirements.txt can't express, so they're
+    # installed separately from everything else in requirements.txt.
+    #
+    # Order matters: torch/torchaudio are installed FIRST, before the rest of
+    # requirements.txt. pyannote.audio (installed below) depends on unpinned
+    # "torch"/"torchaudio", so if it were installed first, pip would pull in
+    # a plain CPU build to satisfy that - then installing the pinned CUDA
+    # build afterward relies on pip cleanly replacing it, which has been
+    # observed to leave two conflicting dist-info directories and a corrupted
+    # torch/lib/c10.dll behind (surfaces as "OSError: WinError 1114" the
+    # first time anything imports torch). Installing the real build first
+    # means pyannote.audio's later resolution just sees it already satisfied.
+    target_build = "2.13.0+cu126" if _has_nvidia_gpu() else "2.13.0"
+    installed_build = _installed_torch_build()
+    if installed_build is not None and installed_build != target_build:
+        print(f"Removing mismatched torch/torchaudio build ({installed_build} != {target_build})...")
+        _run([sys.executable, "-m", "pip", "uninstall", "-y", "torch", "torchaudio"])
+
+    if _has_nvidia_gpu():
+        print("NVIDIA GPU detected - installing the CUDA build of torch/torchaudio.")
+        _run([
+            sys.executable, "-m", "pip", "install",
+            "torch==2.13.0+cu126", "torchaudio==2.11.0+cu126",
+            "--index-url", "https://download.pytorch.org/whl/cu126",
+        ])
+    else:
+        print("No NVIDIA GPU detected - installing CPU-only torch/torchaudio.")
+        _run([sys.executable, "-m", "pip", "install", "torch==2.13.0", "torchaudio==2.11.0"])
+
     lines = REQUIREMENTS.read_text(encoding="utf-8").splitlines()
     normal_reqs = [
         line for line in lines
@@ -52,17 +95,6 @@ def bootstrap_python_deps():
         _run([sys.executable, "-m", "pip", "install", "-r", str(req_file)])
     finally:
         req_file.unlink(missing_ok=True)
-
-    if _has_nvidia_gpu():
-        print("NVIDIA GPU detected - installing the CUDA build of torch/torchaudio.")
-        _run([
-            sys.executable, "-m", "pip", "install",
-            "torch==2.13.0+cu126", "torchaudio==2.11.0+cu126",
-            "--index-url", "https://download.pytorch.org/whl/cu126",
-        ])
-    else:
-        print("No NVIDIA GPU detected - installing CPU-only torch/torchaudio.")
-        _run([sys.executable, "-m", "pip", "install", "torch==2.13.0", "torchaudio==2.11.0"])
 
 
 def bootstrap_web():

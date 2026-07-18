@@ -5,13 +5,16 @@ from PySide6.QtCore import QObject, QThread, Signal
 
 log = logging.getLogger("gui")
 
-# The four sequential steps bootstrap.py runs, in order - matched against its
-# own "+ <command>" progress markers so this can show a friendly label instead
-# of a raw pip/npm log dump. Purely cosmetic: if bootstrap.py's own step order
-# ever changes, this just mislabels a step rather than breaking anything.
+# The sequential steps bootstrap.py runs, matched against its own
+# "+ <command>" progress markers so this can show a friendly label instead
+# of a raw pip/npm log dump. Purely cosmetic: if bootstrap.py's own step
+# order ever changes, this just mislabels a step rather than breaking
+# anything - e.g. the rare case where a mismatched torch build is uninstalled
+# first shifts every label by one for that run, which is harmless since the
+# raw log line is always shown alongside the label.
 PHASE_LABELS = [
-    "Installing core components...",
     "Installing the speech engine (this is the largest download)...",
+    "Installing core components...",
     "Installing the web interface...",
     "Finalizing the web interface...",
 ]

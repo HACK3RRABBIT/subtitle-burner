@@ -32,6 +32,54 @@ def _log_thread_exceptions(args):
 threading.excepthook = _log_thread_exceptions
 
 
+def _diagnose_backend_failure() -> str:
+    """Reads backend.log and turns a handful of known failure signatures
+    into actionable guidance instead of a dead-end "didn't start in time"
+    message. Falls back to showing the raw log tail so there's always
+    something to act on, even for a pattern this doesn't recognize."""
+    log_path = BASE_DIR / "backend.log"
+    try:
+        text = log_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return (
+            "The backend did not start in time, and no backend.log was found to "
+            "explain why. Try restarting the app; if it keeps happening, check "
+            f"for a backend.log file in:\n{BASE_DIR}"
+        )
+
+    tail = "\n".join(text.splitlines()[-15:])
+
+    if "WinError 1114" in text or ("c10.dll" in text and "torch" in text):
+        return (
+            "PyTorch failed to load (a corrupted or conflicting install of the "
+            "torch library). This can happen if setup ran more than once with "
+            "different results (e.g. the GPU wasn't detected the same way twice).\n\n"
+            "To fix it: close this, delete the file \".bootstrap_complete\" in\n"
+            f"{BASE_DIR}\nthen restart the app - this forces a clean reinstall of "
+            "dependencies on the next launch."
+        )
+    if "Address already in use" in text or "only one usage of each socket address" in text:
+        return (
+            "The backend couldn't start because its port is already in use - "
+            "another copy of Subtitle Burner may already be running. Close any "
+            "other instance (check the system tray) and try again."
+        )
+    if "ModuleNotFoundError" in text or "ImportError" in text:
+        return (
+            "The backend failed to start because a required Python package is "
+            "missing or broken.\n\n"
+            "To fix it: close this, delete the file \".bootstrap_complete\" in\n"
+            f"{BASE_DIR}\nthen restart the app - this forces a clean reinstall of "
+            "dependencies on the next launch."
+        )
+
+    return (
+        "The backend did not start in time. Here's the end of backend.log:\n\n"
+        f"{tail}\n\n"
+        f"Full log: {log_path}"
+    )
+
+
 def main() -> int:
     log.info("gui.py starting, BASE_DIR=%s", BASE_DIR)
 
@@ -79,7 +127,9 @@ def main() -> int:
         backend_ready = wait_for_http(f"http://127.0.0.1:{backend_port}/api/models")
         log.info("backend_ready=%s", backend_ready)
         if not backend_ready:
-            QMessageBox.critical(None, "Subtitle Burner - Error", "The backend did not start in time.")
+            diagnosis = _diagnose_backend_failure()
+            log.error("Backend failed to start: %s", diagnosis)
+            QMessageBox.critical(None, "Subtitle Burner - Error", diagnosis)
             shutdown()
             return
 
