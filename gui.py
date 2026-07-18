@@ -83,6 +83,7 @@ def _diagnose_backend_failure() -> str:
 def main() -> int:
     log.info("gui.py starting, BASE_DIR=%s", BASE_DIR)
 
+    from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QApplication, QMessageBox
 
     # bootstrap_screen (and its BootstrapWorker) must be importable before
@@ -102,7 +103,7 @@ def main() -> int:
         QMessageBox.critical(None, "Subtitle Burner - Error", problem)
         return 1
 
-    state = {"backend": None, "main_window": None, "tray": None}
+    state = {"backend": None, "main_window": None, "tray": None, "bootstrap_screen": None}
 
     def shutdown():
         log.info("Shutting down")
@@ -113,6 +114,19 @@ def main() -> int:
     def show_main_window():
         if state["main_window"] is None:
             return
+        # show_main_window normally runs from inside BootstrapScreen's own
+        # "worker finished" slot (via BootstrapWorker -> BootstrapScreen ->
+        # on_success -> here). Hiding/destroying that window synchronously,
+        # in the same call stack as its own QThread's finished signal still
+        # being handled, crashed the whole process outright (no Python
+        # traceback - a native Qt crash). Deferring to the next event loop
+        # tick via QTimer.singleShot lets that thread's cleanup finish first;
+        # hide() (not close()) additionally avoids triggering any close-event
+        # machinery on a window that might still have a pending deleteLater.
+        screen = state["bootstrap_screen"]
+        if screen is not None:
+            state["bootstrap_screen"] = None
+            QTimer.singleShot(0, screen.hide)
         state["main_window"].show()
         state["main_window"].raise_()
         state["main_window"].activateWindow()
@@ -159,8 +173,8 @@ def main() -> int:
         else:
             shutdown()
 
-    bootstrap_screen = BootstrapScreen(ICON_PATH, start_backend_and_show_main_window)
-    bootstrap_screen.show()
+    state["bootstrap_screen"] = BootstrapScreen(ICON_PATH, start_backend_and_show_main_window)
+    state["bootstrap_screen"].show()
 
     try:
         return app.exec()
